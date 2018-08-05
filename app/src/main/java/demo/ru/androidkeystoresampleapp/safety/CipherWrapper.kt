@@ -77,7 +77,7 @@ class CipherWrapper {
         val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_SYMMETRIC)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, initVectorParameterSpec)
 
-        // Get `encrypted data` part
+        // Get `encrypted data` part without init vector
         val encryptedData = data.copyOfRange(
             fromIndex = IV_LENGTH,
             toIndex = data.size
