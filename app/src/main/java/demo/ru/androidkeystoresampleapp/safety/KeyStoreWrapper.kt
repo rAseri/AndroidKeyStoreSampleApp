@@ -8,59 +8,58 @@ import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.util.*
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.security.auth.x500.X500Principal
 
 /**
- * This class responsible for providing Asymmetric Keys material
+ * This class responsible for providing Keys materials and generating
+ * new symmetric / asymmetric Keys
  */
 class KeyStoreWrapper(private val context: Context) {
 
     companion object {
-        private const val KEY_STORE_PROVIDER = "AndroidKeyStore"
+
+        // The names of Security providers
+        private const val ANDROID_KEY_STORE_PROVIDER = "AndroidKeyStore"
+        private const val BOUNCY_CASTLE_PROVIDER = "BC"
+
+        // The names of encryption algorithms
+        private const val AES_ALGORITHM = "AES"
+        private const val RSA_ALGORITHM = "RSA"
+
+        // RSA asymmetric key size
         private const val KEY_SIZE = 1024
     }
 
     private val keyStore: KeyStore
 
     init {
-        keyStore = KeyStore.getInstance(KEY_STORE_PROVIDER)
+        keyStore = KeyStore.getInstance(ANDROID_KEY_STORE_PROVIDER)
         keyStore.load(null)
     }
 
     /**
-     * Returns private-public [KeyPair] associated with this [alias]
+     * Generate and returns new AES symmetric Secret Key
      */
-    fun getAndroidKeyStoreAsymmetricKeyPair(alias: String): KeyPair? {
-        val privateKey = keyStore.getKey(alias, null) as PrivateKey?
-        val publicKey = keyStore.getCertificate(alias)?.publicKey
-
-        return if (privateKey != null && publicKey != null) {
-            KeyPair(publicKey, privateKey)
-        } else {
-            null
-        }
+    fun generateDefaultSymmetricKey(): SecretKey {
+        val keyGenerator = KeyGenerator.getInstance(AES_ALGORITHM, BOUNCY_CASTLE_PROVIDER)
+        return keyGenerator.generateKey()
     }
 
     /**
-     * Create new AndroidKeyStore asymmetric [KeyPair]
+     * Generate and returns new RSA asymmetric KeyPair
      */
-    fun createAndroidKeyStoreAsymmetricKey(alias: String): KeyPair {
-        val generator = KeyPairGenerator.getInstance("RSA", KEY_STORE_PROVIDER)
-        initGeneratorWithKeyPairGeneratorSpec(generator, alias)
+    fun generateAndroidKeyStoreAsymmetricKey(alias: String): KeyPair {
+        val keyPairGenerator =
+            KeyPairGenerator.getInstance(RSA_ALGORITHM, ANDROID_KEY_STORE_PROVIDER)
 
-        // Generates Key with given spec and saves it to the KeyStore
-        return generator.generateKeyPair()
-    }
-
-    /**
-     * Initialize [KeyPairGenerator] that will be used for private-public [KeyPair] generation
-     */
-    private fun initGeneratorWithKeyPairGeneratorSpec(generator: KeyPairGenerator, alias: String) {
+        // Prepare KeyPairGeneratorSpec for init KeyPairGenerator instance
+        // ...
         val startDate = Calendar.getInstance()
-        val endDate = Calendar.getInstance()
-        endDate.add(Calendar.YEAR, 20)
+        val endDate = Calendar.getInstance().apply { add(Calendar.YEAR, 20) }
 
-        // Use deprecated KeyPairGeneratorSpec to support prior 23 SDK devices
+        // Use deprecated KeyPairGeneratorSpec to support prior 23 SDK versions
         @Suppress("DEPRECATION")
         val builder = KeyPairGeneratorSpec.Builder(context)
             .setAlias(alias)
@@ -73,6 +72,24 @@ class KeyStoreWrapper(private val context: Context) {
             .setStartDate(startDate.time)
             .setEndDate(endDate.time)
 
-        generator.initialize(builder.build())
+        // Init KeyPairGenerator instance
+        keyPairGenerator.initialize(builder.build())
+
+        // Generates Key with given spec and saves it to the KeyStore
+        return keyPairGenerator.generateKeyPair()
+    }
+
+    /**
+     * Returns RSA asymmetric KeyPair associated with this [alias]
+     */
+    fun getAndroidKeyStoreAsymmetricKeyPair(alias: String): KeyPair? {
+        val privateKey = keyStore.getKey(alias, null) as PrivateKey?
+        val publicKey = keyStore.getCertificate(alias)?.publicKey
+
+        return if (privateKey != null && publicKey != null) {
+            KeyPair(publicKey, privateKey)
+        } else {
+            null
+        }
     }
 }

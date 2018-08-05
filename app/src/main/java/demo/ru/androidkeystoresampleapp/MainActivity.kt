@@ -5,12 +5,13 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import demo.ru.androidkeystoresampleapp.safety.SecretManager
+import demo.ru.androidkeystoresampleapp.safety.Storage
 import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val TAG = "Debug:"
+        const val TAG = "Debug:"
 
         private const val TEST_MESSAGE =
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit," +
@@ -21,17 +22,16 @@ class MainActivity : AppCompatActivity() {
                     " Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia" +
                     " deserunt mollit anim id est laborum."
 
-        private const val ENCRYPTED_MESSAGE = "message"
     }
 
-    private var encryptedMessage: String? = null
-
-    private val secretManager = SecretManager(this)
+    private lateinit var secretManager: SecretManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        encryptedMessage = savedInstanceState?.getString(ENCRYPTED_MESSAGE)
+
+        val storage = Storage(this)
+        secretManager = SecretManager(this, storage)
 
         val encryptButton = findViewById<View>(R.id.encrypt_string)
         val decryptButton = findViewById<View>(R.id.decrypt_string)
@@ -40,8 +40,10 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Encrypt button clicked")
 
             try {
-                encryptedMessage = secretManager.encryptStringData(TEST_MESSAGE)
+                val encryptedMessage = secretManager.encryptStringData(TEST_MESSAGE)
                 Log.d(TAG, "Encrypted test encryptedMessage: $encryptedMessage")
+
+                storage.saveStringData(encryptedMessage)
             } catch (e: Exception) {
                 Log.d(TAG, "Error: $e")
             }
@@ -50,7 +52,7 @@ class MainActivity : AppCompatActivity() {
 
         decryptButton.setOnClickListener {
             Log.d(TAG, "Decrypt button clicked")
-            val encryptedMessage = encryptedMessage ?: return@setOnClickListener
+            val encryptedMessage = storage.getStringData() ?: return@setOnClickListener
 
             try {
                 val decryptedMessage = secretManager.decryptStringData(encryptedMessage)
@@ -59,10 +61,5 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Error: $e")
             }
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString(ENCRYPTED_MESSAGE, encryptedMessage)
     }
 }
