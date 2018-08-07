@@ -7,7 +7,7 @@ import javax.crypto.SecretKey
 
 /**
  * This class is a simple Facade for secrets managing.
- * It responsible for performing encryption and decryption operations, initial key generation etc.
+ * It responsible for performing encryption and decryption operations, initial keys generation etc.
  */
 class SecretManager(context: Context, private val storage: Storage) {
 

@@ -22,7 +22,6 @@ class KeyStoreWrapper(private val context: Context) {
 
         // The names of Security providers
         private const val ANDROID_KEY_STORE_PROVIDER = "AndroidKeyStore"
-        private const val BOUNCY_CASTLE_PROVIDER = "BC"
 
         // The names of encryption algorithms
         private const val AES_ALGORITHM = "AES"
@@ -43,7 +42,7 @@ class KeyStoreWrapper(private val context: Context) {
      * Generate and returns new AES symmetric Secret Key
      */
     fun generateDefaultSymmetricKey(): SecretKey {
-        val keyGenerator = KeyGenerator.getInstance(AES_ALGORITHM, BOUNCY_CASTLE_PROVIDER)
+        val keyGenerator = KeyGenerator.getInstance(AES_ALGORITHM)
         return keyGenerator.generateKey()
     }
 
