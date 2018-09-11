@@ -91,4 +91,8 @@ class KeyStoreWrapper(private val context: Context) {
             null
         }
     }
+
+    fun deleteKey(keyAlias: String) {
+        keyStore.deleteEntry(keyAlias)
+    }
 }

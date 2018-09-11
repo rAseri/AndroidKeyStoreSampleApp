@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         val encryptButton = findViewById<View>(R.id.encrypt_string)
         val decryptButton = findViewById<View>(R.id.decrypt_string)
+        val deleteKeyButton = findViewById<View>(R.id.delete_key)
 
         encryptButton.setOnClickListener {
             Log.d(TAG, "Encrypt button clicked")
@@ -60,6 +61,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.d(TAG, "Error: $e")
             }
+        }
+
+        deleteKeyButton.setOnClickListener {
+            secretManager.deleteKey()
         }
     }
 }
