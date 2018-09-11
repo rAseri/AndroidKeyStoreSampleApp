@@ -3,6 +3,9 @@ package demo.ru.androidkeystoresampleapp.safety
 import android.content.Context
 import android.content.SharedPreferences
 
+/**
+ * This class represents a simple SharedPreferences secrets storage.
+ */
 class Storage(context: Context) {
 
     companion object {

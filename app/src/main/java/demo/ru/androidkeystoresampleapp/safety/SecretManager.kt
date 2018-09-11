@@ -6,44 +6,50 @@ import java.security.PublicKey
 import javax.crypto.SecretKey
 
 /**
- * This class is a simple Facade for secrets managing.
- * It is responsible for performing encryption and decryption operations, initial keys generation etc.
+ * This class is a simple Facade for the app secrets managing.
+ *
+ * It is responsible for performing encryption and decryption operations,
+ * initial keys generation etc.
  */
 class SecretManager(context: Context, private val storage: Storage) {
 
     companion object {
-        private const val MASTER_KEY = "master.key"
+        private const val TEST_PASSPHRASE = "4423"
+        private val TEST_SALT = byteArrayOf(1, 2, 3)
     }
 
     private val cipherWrapper = CipherWrapper()
-    private val keyStoreWrapper = KeyStoreWrapper(context)
+    private val keyStoreWrapper = KeysManager(context)
 
     init {
-        var masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair(MASTER_KEY)
+        var masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
 
-        // NOTE: RSA Master Key may be null when user setup device protection with PIN code
+        // NOTE: RSA Master Key may be null when a user is setting or changing device protection mechanism
         if (masterKey == null) {
 
-            // Generate asymmetric RSA Master Key and save it to secure AndroidKeyStore
-            masterKey = keyStoreWrapper.generateAndroidKeyStoreAsymmetricKey(MASTER_KEY)
+            // Generate asymmetric RSA Master Key and save it to secure AndroidKeystore
+            masterKey = keyStoreWrapper.generateAndroidKeyStoreAsymmetricKey()
 
-            // Generate symmetric AES Secret Key, wrap it with Master Key and save it to local Storage
+            // Generate Secret Key, wrap (encrypt) it with Master Key and save it to the local Storage
             generateAndSaveSecretKey(masterPublicKey = masterKey.public)
 
         } else if (storage.getWrappedSecretKey() == null) {
 
-            // Generate symmetric AES Secret Key, wrap it with Master Key and save it to local Storage
+            // Generate Secret Key, wrap (encrypt) it with Master Key and save it to the local Storage
             generateAndSaveSecretKey(masterPublicKey = masterKey.public)
         }
     }
 
     private fun generateAndSaveSecretKey(masterPublicKey: PublicKey) {
 
-        // Generate AES symmetric Secret Key
-        val secretKey = keyStoreWrapper.generateDefaultSymmetricKey()
+        // Generate a Secret Key
+        val secretKey = keyStoreWrapper.generateSecretKeyForPrivateData(
+            passphrase = TEST_PASSPHRASE,
+            salt = TEST_SALT
+        )
 
-        // Wrap Secret Key with RSA asymmetric Master Key
-        val wrappedSecretKey = cipherWrapper.wrapKey(
+        // Wrap (encrypt) Secret Key with RSA asymmetric Master Key
+        val wrappedSecretKey = cipherWrapper.wrapSecretKey(
             keyToBeWrapped = secretKey,
             keyToWrapWith = masterPublicKey
         )
@@ -61,10 +67,10 @@ class SecretManager(context: Context, private val storage: Storage) {
      */
     fun encryptStringData(data: String): String {
 
-        // Get AES symmetric Secret Key
+        // Get Secret Key for encryption
         val secretKey = getSecretKey()
 
-        // Encrypt data with AES symmetric Secret Key
+        // Encrypt data with Secret Key
         val encryptedData = cipherWrapper.encrypt(
             data = data.toByteArray(),
             secretKey = secretKey
@@ -80,10 +86,10 @@ class SecretManager(context: Context, private val storage: Storage) {
      */
     fun decryptStringData(data: String): String {
 
-        // Get AES symmetric Secret Key
+        // Get Secret Key for decryption
         val secretKey = getSecretKey()
 
-        // Decrypt data with AES symmetric Secret Key
+        // Decrypt data with Secret Key
         val decryptedData = cipherWrapper.decrypt(
             data = Base64.decode(data, Base64.DEFAULT),
             secretKey = secretKey
@@ -92,22 +98,22 @@ class SecretManager(context: Context, private val storage: Storage) {
         return String(decryptedData)
     }
 
-    fun deleteKey() {
-        keyStoreWrapper.deleteKey("Fake")
+    fun removeKeysMaterials() {
+        keyStoreWrapper.deleteAndroidKeyStoreAsymmetricKeyPair()
     }
 
     private fun getSecretKey(): SecretKey {
 
-        // Get RSA asymmetric Master Key from AndroidKeyStore
-        val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair(MASTER_KEY)
+        // Get RSA asymmetric Master Key from AndroidKeystore
+        val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
                 ?: throw IllegalStateException("There is no master key in AndroidKeyStore")
 
-        // Get wrapped AES symmetric Secret Key from local Storage
+        // Get wrapped (encrypted) Secret Key from local Storage
         val wrappedSecretKey = storage.getWrappedSecretKey()
                 ?: throw IllegalStateException("There is no encrypted secret key in local Storage")
 
-        // Unwrap Secret Key with RSA Private Key
-        return cipherWrapper.unWrapKeySecretKey(
+        // Unwrap (decrypt) Secret Key with RSA Private Key
+        return cipherWrapper.unWrapSecretKey(
             keyToBeUnWrapped = Base64.decode(wrappedSecretKey, Base64.DEFAULT),
             keyToUnWrapWith = masterKey.private
         )

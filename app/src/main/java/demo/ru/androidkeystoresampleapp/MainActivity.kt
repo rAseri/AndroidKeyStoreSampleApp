@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         deleteKeyButton.setOnClickListener {
-            secretManager.deleteKey()
+            secretManager.removeKeysMaterials()
         }
     }
 }

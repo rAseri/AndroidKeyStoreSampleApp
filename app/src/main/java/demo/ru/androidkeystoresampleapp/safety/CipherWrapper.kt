@@ -8,7 +8,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 
 /**
- * This class responsible for performing all `transformation`operations using [Cipher] class.
+ * This class responsible for performing all `transformation` operations using a [Cipher] class.
  */
 class CipherWrapper {
 
@@ -17,14 +17,13 @@ class CipherWrapper {
         private const val TRANSFORMATION_ASYMMETRIC = "RSA/ECB/PKCS1Padding"
 
         private const val AES_ALGORITHM = "AES"
-
         private const val IV_LENGTH = 16
     }
 
     /**
-     * Wrap (encrypt) AES symmetric Secret Key with the RSA Public Key
+     * Wrap (encrypt) Secret Key with the RSA Public Key
      */
-    fun wrapKey(keyToBeWrapped: SecretKey, keyToWrapWith: PublicKey): ByteArray {
+    fun wrapSecretKey(keyToBeWrapped: SecretKey, keyToWrapWith: PublicKey): ByteArray {
         val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_ASYMMETRIC)
         cipher.init(Cipher.WRAP_MODE, keyToWrapWith)
 
@@ -32,9 +31,9 @@ class CipherWrapper {
     }
 
     /**
-     * Unwrap (decrypt) AES symmetric Secret Key with the RSA Private Key
+     * Unwrap (decrypt) Secret Key with the RSA Private Key
      */
-    fun unWrapKeySecretKey(keyToBeUnWrapped: ByteArray, keyToUnWrapWith: PrivateKey): SecretKey {
+    fun unWrapSecretKey(keyToBeUnWrapped: ByteArray, keyToUnWrapWith: PrivateKey): SecretKey {
         val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_ASYMMETRIC)
         cipher.init(Cipher.UNWRAP_MODE, keyToUnWrapWith)
 
@@ -42,7 +41,7 @@ class CipherWrapper {
     }
 
     /**
-     * Encrypt data with AES symmetric Secret Key and returns encrypted data along with init vector
+     * Encrypt data with Secret Key and returns encrypted data along with init vector
      *
      * [data] - ByteArray representation of plain data
      */
