@@ -98,7 +98,12 @@ class SecretManager(context: Context, private val storage: Storage) {
         return String(decryptedData)
     }
 
-    fun getSecretKey(): SecretKey {
+    fun getRealmKey(): ByteArray {
+        val secretKeyEncoded = getSecretKey().encoded
+        return secretKeyEncoded + secretKeyEncoded
+    }
+
+    private fun getSecretKey(): SecretKey {
 
         // Get RSA asymmetric Master Key from the AndroidKeystore
         val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()

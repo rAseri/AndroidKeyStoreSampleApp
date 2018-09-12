@@ -36,4 +36,24 @@
         android:textColor="@android:color/white"
         tools:ignore="HardcodedText" />
 
+    <Button
+        android:id="@+id/add_dog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:background="@color/colorAccent"
+        android:text="Add dog to realm "
+        android:textColor="@android:color/white"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/load_dogs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:background="@color/colorAccent"
+        android:text="Load dogs"
+        android:textColor="@android:color/white"
+        tools:ignore="HardcodedText" />
+
 </LinearLayout>
