@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * This class represents a simple SharedPreferences secrets storage.
+ * This class represents simple SharedPreferences storage.
  */
 class Storage(context: Context) {
 

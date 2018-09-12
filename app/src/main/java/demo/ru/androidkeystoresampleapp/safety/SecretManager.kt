@@ -98,12 +98,7 @@ class SecretManager(context: Context, private val storage: Storage) {
         return String(decryptedData)
     }
 
-    fun removeKeysMaterials() {
-        keyStoreWrapper.deleteAndroidKeyStoreAsymmetricKeyPair()
-        storage.deleteWrappedSecretKey()
-    }
-
-    private fun getSecretKey(): SecretKey {
+    fun getSecretKey(): SecretKey {
 
         // Get RSA asymmetric Master Key from the AndroidKeystore
         val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
@@ -118,5 +113,10 @@ class SecretManager(context: Context, private val storage: Storage) {
             keyToBeUnWrapped = Base64.decode(wrappedSecretKey, Base64.DEFAULT),
             keyToUnWrapWith = masterKey.private
         )
+    }
+
+    fun removeKeysMaterials() {
+        keyStoreWrapper.deleteAndroidKeyStoreAsymmetricKeyPair()
+        storage.deleteWrappedSecretKey()
     }
 }
