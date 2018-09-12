@@ -8,13 +8,13 @@ import javax.crypto.SecretKey
 /**
  * This class is a simple Facade for the app secrets managing.
  *
- * It is responsible for performing encryption and decryption operations,
+ * This class responsible for performing encryption and decryption user data,
  * initial keys generation etc.
  */
 class SecretManager(context: Context, private val storage: Storage) {
 
     companion object {
-        private const val TEST_PASSPHRASE = "4423"
+        private const val TEST_USER_PASSPHRASE = "4423"
         private val TEST_SALT = byteArrayOf(1, 2, 3)
     }
 
@@ -24,10 +24,10 @@ class SecretManager(context: Context, private val storage: Storage) {
     init {
         var masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
 
-        // NOTE: RSA Master Key may be null when a user is setting or changing device protection mechanism
+        // NOTE: RSA Master Key may be null when a user is setting or changing device protection mode
         if (masterKey == null) {
 
-            // Generate asymmetric RSA Master Key and save it to secure AndroidKeystore
+            // Generate asymmetric RSA Master Key and save it to the secure AndroidKeystore
             masterKey = keyStoreWrapper.generateAndroidKeyStoreAsymmetricKey()
 
             // Generate Secret Key, wrap (encrypt) it with Master Key and save it to the local Storage
@@ -43,8 +43,8 @@ class SecretManager(context: Context, private val storage: Storage) {
     private fun generateAndSaveSecretKey(masterPublicKey: PublicKey) {
 
         // Generate a Secret Key
-        val secretKey = keyStoreWrapper.generateSecretKeyForPrivateData(
-            passphrase = TEST_PASSPHRASE,
+        val secretKey = keyStoreWrapper.generateSecretKey(
+            passphrase = TEST_USER_PASSPHRASE,
             salt = TEST_SALT
         )
 
@@ -54,7 +54,7 @@ class SecretManager(context: Context, private val storage: Storage) {
             keyToWrapWith = masterPublicKey
         )
 
-        // Save Secret Key to local Storage
+        // Save Secret Key to the local Storage
         storage.saveWrappedSecretKey(
             wrappedSecretKey = Base64.encodeToString(wrappedSecretKey, Base64.DEFAULT)
         )
@@ -63,14 +63,14 @@ class SecretManager(context: Context, private val storage: Storage) {
     /**
      * Encrypt String data and returns its Base64 representation
      *
-     * [data] - data to be encrypted
+     * [data] - String data to be encrypted
      */
     fun encryptStringData(data: String): String {
 
-        // Get Secret Key for encryption
+        // Get a Secret Key for encryption
         val secretKey = getSecretKey()
 
-        // Encrypt data with Secret Key
+        // Encrypt String data with the Secret Key
         val encryptedData = cipherWrapper.encrypt(
             data = data.toByteArray(),
             secretKey = secretKey
@@ -86,10 +86,10 @@ class SecretManager(context: Context, private val storage: Storage) {
      */
     fun decryptStringData(data: String): String {
 
-        // Get Secret Key for decryption
+        // Get a Secret Key for decryption
         val secretKey = getSecretKey()
 
-        // Decrypt data with Secret Key
+        // Decrypt String data with the Secret Key
         val decryptedData = cipherWrapper.decrypt(
             data = Base64.decode(data, Base64.DEFAULT),
             secretKey = secretKey
@@ -100,15 +100,16 @@ class SecretManager(context: Context, private val storage: Storage) {
 
     fun removeKeysMaterials() {
         keyStoreWrapper.deleteAndroidKeyStoreAsymmetricKeyPair()
+        storage.deleteWrappedSecretKey()
     }
 
     private fun getSecretKey(): SecretKey {
 
-        // Get RSA asymmetric Master Key from AndroidKeystore
+        // Get RSA asymmetric Master Key from the AndroidKeystore
         val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
                 ?: throw IllegalStateException("There is no master key in AndroidKeyStore")
 
-        // Get wrapped (encrypted) Secret Key from local Storage
+        // Get wrapped (encrypted) Secret Key from the local Storage
         val wrappedSecretKey = storage.getWrappedSecretKey()
                 ?: throw IllegalStateException("There is no encrypted secret key in local Storage")
 

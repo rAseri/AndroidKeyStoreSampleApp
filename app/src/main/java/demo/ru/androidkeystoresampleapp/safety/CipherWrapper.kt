@@ -8,40 +8,36 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 
 /**
- * This class responsible for performing all `transformation` operations using a [Cipher] class.
+ * This class responsible for performing all transformation operations using a [Cipher] class.
  */
 class CipherWrapper {
 
     companion object {
-        private const val TRANSFORMATION_SYMMETRIC = "AES/CBC/PKCS7Padding"
-        private const val TRANSFORMATION_ASYMMETRIC = "RSA/ECB/PKCS1Padding"
-
-        private const val AES_ALGORITHM = "AES"
         private const val IV_LENGTH = 16
     }
 
     /**
-     * Wrap (encrypt) Secret Key with the RSA Public Key
+     * Wrap (encrypt) Secret Key with a RSA Public Key
      */
     fun wrapSecretKey(keyToBeWrapped: SecretKey, keyToWrapWith: PublicKey): ByteArray {
-        val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_ASYMMETRIC)
+        val cipher: Cipher = Cipher.getInstance(Constants.RSA_TRANSFORMATION)
         cipher.init(Cipher.WRAP_MODE, keyToWrapWith)
 
         return cipher.wrap(keyToBeWrapped)
     }
 
     /**
-     * Unwrap (decrypt) Secret Key with the RSA Private Key
+     * Unwrap (decrypt) Secret Key with a RSA Private Key
      */
     fun unWrapSecretKey(keyToBeUnWrapped: ByteArray, keyToUnWrapWith: PrivateKey): SecretKey {
-        val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_ASYMMETRIC)
+        val cipher: Cipher = Cipher.getInstance(Constants.RSA_TRANSFORMATION)
         cipher.init(Cipher.UNWRAP_MODE, keyToUnWrapWith)
 
-        return cipher.unwrap(keyToBeUnWrapped, AES_ALGORITHM, Cipher.SECRET_KEY) as SecretKey
+        return cipher.unwrap(keyToBeUnWrapped, Constants.AES, Cipher.SECRET_KEY) as SecretKey
     }
 
     /**
-     * Encrypt data with Secret Key and returns encrypted data along with init vector
+     * Encrypt data with a Secret Key and returns an encrypted data along with init vector
      *
      * [data] - ByteArray representation of plain data
      */
@@ -53,7 +49,7 @@ class CipherWrapper {
         val initVectorParameterSpec = IvParameterSpec(initVector)
 
         // Get cipher instance for encryption and init it with Secret Key and init vector
-        val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_SYMMETRIC)
+        val cipher: Cipher = Cipher.getInstance(Constants.AES_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, initVectorParameterSpec)
 
         // Encrypt data and concat it with init vector
@@ -62,7 +58,7 @@ class CipherWrapper {
     }
 
     /**
-     * Decrypt data with AES symmetric Secret Key and returns decrypted data as ByteArray
+     * Decrypt data with a Secret Key and returns decrypted data as a ByteArray
      *
      * [data] - ByteArray, that contains both init vector and encrypted data
      */
@@ -72,16 +68,12 @@ class CipherWrapper {
         // and create IvParameterSpec instance
         val initVectorParameterSpec = IvParameterSpec(data, 0, IV_LENGTH)
 
-        // Get cipher instance for decryption and init it with `secretKey` and `init vector`
-        val cipher: Cipher = Cipher.getInstance(TRANSFORMATION_SYMMETRIC)
+        // Get cipher instance for decryption and init it with Secret Key and init vector
+        val cipher: Cipher = Cipher.getInstance(Constants.AES_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, initVectorParameterSpec)
 
-        // Get `encrypted data` part without init vector
-        val encryptedData = data.copyOfRange(
-            fromIndex = IV_LENGTH,
-            toIndex = data.size
-        )
-
+        // Get encrypted data part without init vector and decrypt it
+        val encryptedData = data.copyOfRange(fromIndex = IV_LENGTH, toIndex = data.size)
         return cipher.doFinal(encryptedData)
     }
 }

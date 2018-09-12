@@ -11,74 +11,32 @@ import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 import javax.security.auth.x500.X500Principal
 
 /**
- * This class responsible for providing Keys materials
+ * This class responsible for providing Keys materials.
  */
 class KeysManager(private val context: Context) {
 
-    companion object {
-
-        // AndroidKeystore Master Key alias
-        private const val MASTER_KEY = "master.key"
-
-        // The names of Security provider
-        private const val ANDROID_KEY_STORE_PROVIDER = "AndroidKeyStore"
-
-        // The names of encryption algorithms
-        private const val RSA_ALGORITHM = "RSA"
-        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1"
-
-        // Keys sizes
-        private const val RSA_KEY_SIZE = 1024
-        private const val AES_KEY_SIZE = 256
-        private const val REALM_KEY_SIZE = 512
-    }
-
-    private val keyStore: KeyStore
+    private val keyStore: KeyStore = KeyStore.getInstance(Constants.KEYSTORE_PROVIDER)
 
     init {
-        keyStore = KeyStore.getInstance(ANDROID_KEY_STORE_PROVIDER)
         keyStore.load(null)
     }
 
     /**
-     * Generate and returns 256-bit Secret Key for private data encryption
+     * Generate and returns Secret Key using a [passphrase] and a [salt]
      */
-    fun generateSecretKeyForPrivateData(passphrase: String, salt: ByteArray): SecretKey {
-        return generateSecretKeyUsingPassphrase(
-            passphrase = passphrase,
-            salt = salt,
-            keySize = AES_KEY_SIZE
-        )
-    }
-
-    /**
-     * Generate and returns 512-bit Secret Key for Realm Database encryption
-     */
-    fun generateSecretKeyForRealmDatabase(passphrase: String, salt: ByteArray): SecretKey {
-        return generateSecretKeyUsingPassphrase(
-            passphrase = passphrase,
-            salt = salt,
-            keySize = REALM_KEY_SIZE
-        )
-    }
-
-    /**
-     * Generate and returns Secret Key using the [passphrase] and [salt]
-     */
-    private fun generateSecretKeyUsingPassphrase(
-        passphrase: String,
-        salt: ByteArray,
-        keySize: Int
-    ): SecretKey {
-
+    fun generateSecretKey(passphrase: String, salt: ByteArray): SecretKey {
         val iterations = 1000
+        val password = passphrase.toCharArray()
 
-        val secretKeyFactory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
-        val keySpec = PBEKeySpec(passphrase.toCharArray(), salt, iterations, keySize)
-        return secretKeyFactory.generateSecret(keySpec)
+        val secretKeyFactory = SecretKeyFactory.getInstance(Constants.PBKDF2_WITH_HMAC_SHA1)
+        val keySpec = PBEKeySpec(password, salt, iterations, Constants.SECRET_KEY_SIZE)
+        val keyBytes = secretKeyFactory.generateSecret(keySpec).encoded
+
+        return SecretKeySpec(keyBytes, Constants.AES)
     }
 
     /**
@@ -86,7 +44,7 @@ class KeysManager(private val context: Context) {
      */
     fun generateAndroidKeyStoreAsymmetricKey(): KeyPair {
         val keyPairGenerator =
-            KeyPairGenerator.getInstance(RSA_ALGORITHM, ANDROID_KEY_STORE_PROVIDER)
+            KeyPairGenerator.getInstance(Constants.RSA, Constants.KEYSTORE_PROVIDER)
 
         // Prepare KeyPairGeneratorSpec for init KeyPairGenerator instance
         // ...
@@ -96,29 +54,29 @@ class KeysManager(private val context: Context) {
         // Use deprecated KeyPairGeneratorSpec to support prior 23 SDK versions
         @Suppress("DEPRECATION")
         val builder = KeyPairGeneratorSpec.Builder(context)
-            .setAlias(MASTER_KEY)
-            .setKeySize(RSA_KEY_SIZE)
+            .setAlias(Constants.KEYSTORE_MASTER_KEY_ALIAS)
+            .setKeySize(Constants.KEYSTORE_MASTER_KEY_SIZE)
 
             // Asymmetric keys must be signed with a certificate, so we have to
             // set some attributes, required for the `fake` self-signed certificate.
             .setSerialNumber(BigInteger.ONE)
-            .setSubject(X500Principal("CN=$MASTER_KEY CA Certificate"))
+            .setSubject(X500Principal("CN=${Constants.KEYSTORE_MASTER_KEY_ALIAS} CA Certificate"))
             .setStartDate(startDate.time)
             .setEndDate(endDate.time)
 
         // Init KeyPairGenerator instance
         keyPairGenerator.initialize(builder.build())
 
-        // Generates Key with given spec and saves it to the KeyStore
+        // Generate a KeyPair with the given spec and save it to the AndroidKeyStore
         return keyPairGenerator.generateKeyPair()
     }
 
     /**
-     * Returns RSA asymmetric KeyPair associated with this [alias]
+     * Returns a RSA asymmetric KeyPair from the AndroidKeyStore
      */
     fun getAndroidKeyStoreAsymmetricKeyPair(): KeyPair? {
-        val privateKey = keyStore.getKey(MASTER_KEY, null) as PrivateKey?
-        val publicKey = keyStore.getCertificate(MASTER_KEY)?.publicKey
+        val privateKey = keyStore.getKey(Constants.KEYSTORE_MASTER_KEY_ALIAS, null) as PrivateKey?
+        val publicKey = keyStore.getCertificate(Constants.KEYSTORE_MASTER_KEY_ALIAS)?.publicKey
 
         return if (privateKey != null && publicKey != null) {
             KeyPair(publicKey, privateKey)
@@ -127,7 +85,10 @@ class KeysManager(private val context: Context) {
         }
     }
 
+    /**
+     * Delete a RSA asymmetric KeyPair from the AndroidKeyStore
+     */
     fun deleteAndroidKeyStoreAsymmetricKeyPair() {
-        keyStore.deleteEntry(MASTER_KEY)
+        keyStore.deleteEntry(Constants.KEYSTORE_MASTER_KEY_ALIAS)
     }
 }

@@ -30,6 +30,12 @@ class Storage(context: Context) {
         return secretPreferences.getString(STORAGE_WRAPPED_SECRET_KEY, null)
     }
 
+    fun deleteWrappedSecretKey() {
+        secretPreferences.edit()
+            .putString(STORAGE_WRAPPED_SECRET_KEY, null)
+            .apply()
+    }
+
     fun saveStringData(data: String) {
         secretPreferences.edit()
             .putString(STORAGE_STRING_DATA_KEY, data)
