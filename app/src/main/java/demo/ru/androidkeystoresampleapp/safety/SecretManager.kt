@@ -22,21 +22,23 @@ class SecretManager(context: Context, private val storage: Storage) {
     private val keyStoreWrapper = KeysManager(context)
 
     init {
-        var masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
+        var masterKeyPair = keyStoreWrapper.getMasterKeyPair()
 
-        // NOTE: RSA Master Key may be null when a user is setting or changing device protection mode
-        if (masterKey == null) {
+        // NOTE: Master KeyPair may be null when a user is changing device protection mode
+        if (masterKeyPair == null) {
 
-            // Generate asymmetric RSA Master Key and save it to the secure AndroidKeystore
-            masterKey = keyStoreWrapper.generateAndroidKeyStoreAsymmetricKey()
+            // Generate Master KeyPair
+            masterKeyPair = keyStoreWrapper.generateMasterKeyPair()
 
-            // Generate Secret Key, wrap (encrypt) it with Master Key and save it to the local Storage
-            generateAndSaveSecretKey(masterPublicKey = masterKey.public)
+            // Generate Secret Key, wrap (encrypt) it with the Master PublicKey
+            // and save it to the local Storage
+            generateAndSaveSecretKey(masterPublicKey = masterKeyPair.public)
 
-        } else if (storage.getWrappedSecretKey() == null) {
+        } else if (storage.getSecretKey() == null) {
 
-            // Generate Secret Key, wrap (encrypt) it with Master Key and save it to the local Storage
-            generateAndSaveSecretKey(masterPublicKey = masterKey.public)
+            // Generate Secret Key, wrap (encrypt) it with Master PublicKey
+            // and save it to the local Storage
+            generateAndSaveSecretKey(masterPublicKey = masterKeyPair.public)
         }
     }
 
@@ -48,14 +50,14 @@ class SecretManager(context: Context, private val storage: Storage) {
             salt = TEST_SALT
         )
 
-        // Wrap (encrypt) Secret Key with RSA asymmetric Master Key
+        // Wrap (encrypt) Secret Key with Master PublicKey
         val wrappedSecretKey = cipherWrapper.wrapSecretKey(
             keyToBeWrapped = secretKey,
             keyToWrapWith = masterPublicKey
         )
 
-        // Save Secret Key to the local Storage
-        storage.saveWrappedSecretKey(
+        // Save the Secret Key to the local Storage
+        storage.saveSecretKey(
             wrappedSecretKey = Base64.encodeToString(wrappedSecretKey, Base64.DEFAULT)
         )
     }
@@ -98,6 +100,12 @@ class SecretManager(context: Context, private val storage: Storage) {
         return String(decryptedData)
     }
 
+    /**
+     * Returns [ByteArray] representation of Key that is used by Realm.
+     *
+     * Note: Realm requires 512-bit Key for Database encryption, so we just double
+     * the app Secret Key to 512-bit.
+     */
     fun getRealmKey(): ByteArray {
         val secretKeyEncoded = getSecretKey().encoded
         return secretKeyEncoded + secretKeyEncoded
@@ -105,15 +113,15 @@ class SecretManager(context: Context, private val storage: Storage) {
 
     private fun getSecretKey(): SecretKey {
 
-        // Get RSA asymmetric Master Key from the AndroidKeystore
-        val masterKey = keyStoreWrapper.getAndroidKeyStoreAsymmetricKeyPair()
-                ?: throw IllegalStateException("There is no master key in AndroidKeyStore")
+        // Get Master KeyPair
+        val masterKey = keyStoreWrapper.getMasterKeyPair()
+                ?: throw IllegalStateException("There is no master key in the AndroidKeyStore")
 
         // Get wrapped (encrypted) Secret Key from the local Storage
-        val wrappedSecretKey = storage.getWrappedSecretKey()
-                ?: throw IllegalStateException("There is no encrypted secret key in local Storage")
+        val wrappedSecretKey = storage.getSecretKey()
+                ?: throw IllegalStateException("There is no encrypted secret key in th local Storage")
 
-        // Unwrap (decrypt) Secret Key with RSA Private Key
+        // Unwrap (decrypt) Secret Key with a Master PrivateKey
         return cipherWrapper.unWrapSecretKey(
             keyToBeUnWrapped = Base64.decode(wrappedSecretKey, Base64.DEFAULT),
             keyToUnWrapWith = masterKey.private
@@ -121,7 +129,7 @@ class SecretManager(context: Context, private val storage: Storage) {
     }
 
     fun removeKeysMaterials() {
-        keyStoreWrapper.deleteAndroidKeyStoreAsymmetricKeyPair()
-        storage.deleteWrappedSecretKey()
+        keyStoreWrapper.deleteMasterKeyPair()
+        storage.deleteSecretKey()
     }
 }
