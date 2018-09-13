@@ -1,7 +1,14 @@
 package demo.ru.androidkeystoresampleapp.safety
 
 import android.content.Context
+import android.net.Uri
 import android.util.Base64
+import android.util.Log
+import demo.ru.androidkeystoresampleapp.MainActivity
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.security.PublicKey
 import javax.crypto.SecretKey
 
@@ -11,7 +18,7 @@ import javax.crypto.SecretKey
  * This class responsible for performing encryption and decryption user data,
  * initial keys generation etc.
  */
-class SecretManager(context: Context, private val storage: Storage) {
+class SecretManager(private val context: Context, private val storage: Storage) {
 
     companion object {
         private const val TEST_USER_PASSPHRASE = "4423"
@@ -100,11 +107,55 @@ class SecretManager(context: Context, private val storage: Storage) {
         return String(decryptedData)
     }
 
+    fun encryptFileAndSaveToFilesDir(fileUri: Uri, fileName: String) {
+        var inputStream: InputStream? = null
+        var outputStream: OutputStream? = null
+
+        try {
+            inputStream = context.contentResolver.openInputStream(fileUri)
+            outputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)
+
+            cipherWrapper.encryptStream(
+                inputStream = inputStream,
+                outputStream = outputStream,
+                secretKey = getSecretKey()
+            )
+        } catch (e: FileNotFoundException) {
+            Log.e(MainActivity.TAG, "There is an Exception when open streams for encryption: $e")
+
+        } finally {
+            inputStream?.close()
+            outputStream?.close()
+        }
+    }
+
+    fun decryptFileAndSaveToFilesDir(encryptedFileName: String, decryptedFileName: String) {
+        var inputStream: InputStream? = null
+        var outputStream: OutputStream? = null
+
+        try {
+            inputStream = context.openFileInput(encryptedFileName)
+            outputStream = context.openFileOutput(decryptedFileName, Context.MODE_PRIVATE)
+
+            cipherWrapper.decryptStream(
+                inputStream = inputStream,
+                outputStream = outputStream,
+                secretKey = getSecretKey()
+            )
+        } catch (e: IOException) {
+            Log.e(MainActivity.TAG, "There is an Exception when open streams for decryption: $e")
+
+        } finally {
+            inputStream?.close()
+            outputStream?.close()
+        }
+    }
+
     /**
      * Returns [ByteArray] representation of Key that is used by Realm.
      *
      * Note: Realm requires 512-bit Key for Database encryption, so we just double
-     * the app Secret Key to 512-bit.
+     * the app 256-bit Secret Key to 512-bit.
      */
     fun getRealmKey(): ByteArray {
         val secretKeyEncoded = getSecretKey().encoded

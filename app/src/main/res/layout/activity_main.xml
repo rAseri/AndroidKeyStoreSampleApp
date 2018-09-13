@@ -56,4 +56,12 @@
         android:textColor="@android:color/white"
         tools:ignore="HardcodedText" />
 
+    <Button
+        android:id="@+id/start_file_chooser"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Start file chooser activity"
+        tools:ignore="HardcodedText" />
+
 </LinearLayout>

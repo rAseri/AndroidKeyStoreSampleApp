@@ -55,7 +55,7 @@ class KeysManager(private val context: Context) {
     }
 
     /**
-     * Generate, save and return a new Master KeyPair
+     * Generate and save new Master KeyPair
      */
     fun generateMasterKeyPair(): KeyPair {
         val keyPairGenerator = KeyPairGenerator.getInstance(Algorithm.RSA, KEYSTORE_PROVIDER)

@@ -4,10 +4,9 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
-import demo.ru.androidkeystoresampleapp.database.RealmProvider
 import demo.ru.androidkeystoresampleapp.database.model.DogModel
+import demo.ru.androidkeystoresampleapp.provider.DependencyProvider
 import demo.ru.androidkeystoresampleapp.safety.SecretManager
-import demo.ru.androidkeystoresampleapp.safety.Storage
 import io.realm.Realm
 import java.lang.Exception
 
@@ -34,18 +33,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val storage = Storage(this)
-        secretManager = SecretManager(this, storage)
+        val storage = DependencyProvider.getStorage(this)
+        secretManager = DependencyProvider.getSecretManager(this)
 
         // Open the realm for the UI thread.
         val realmKey = secretManager.getRealmKey()
-        realm = RealmProvider.gerRealmInstance(realmKey)
+        realm = DependencyProvider.gerRealmInstance(realmKey)
 
         val encryptButton = findViewById<View>(R.id.encrypt_string)
         val decryptButton = findViewById<View>(R.id.decrypt_string)
         val deleteKeyButton = findViewById<View>(R.id.delete_key)
         val addDogButton = findViewById<View>(R.id.add_dog)
         val loadDogsButton = findViewById<View>(R.id.load_dogs)
+        val startFileChooserActivityButton = findViewById<View>(R.id.start_file_chooser)
 
         encryptButton.setOnClickListener {
             Log.d(TAG, "Encrypt button clicked")
@@ -91,6 +91,10 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Load dogs button clicked")
             val dogs = realm.where(DogModel::class.java).findAll()
             Log.d(TAG, "Loaded dogs: $dogs")
+        }
+
+        startFileChooserActivityButton.setOnClickListener {
+            FileChooserActivity.startActivity(this)
         }
     }
 
