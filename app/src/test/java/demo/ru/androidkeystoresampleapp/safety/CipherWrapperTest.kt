@@ -26,16 +26,18 @@ class CipherWrapperTest {
 
     @Before
     fun setUp() {
+
         // Add the BouncyCastleProvider that will provide all necessary cryptographic algorithms
+        // when we run tests on the local machine
         Security.addProvider(BouncyCastleProvider())
 
-        // We have to set this property to be able using AES 256-bit Secret Keys
-        // on the local machine.
+        // We have to set this property to be able to use an AES 256-bit Secret Keys
+        // on the local machine
         Security.setProperty("crypto.policy", "unlimited")
     }
 
     @Test
-    fun `Secret Key successfully was wrapped with a Master PublicKey`() {
+    fun `Secret Key was successfully wrapped with a Master PublicKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -53,7 +55,7 @@ class CipherWrapperTest {
     }
 
     @Test
-    fun `Secret Key was successfully unwrapped with correct Master PrivateKey`() {
+    fun `Secret Key was successfully unwrapped with a correct Master PrivateKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -75,7 +77,7 @@ class CipherWrapperTest {
     }
 
     @Test(expected = InvalidKeyException::class)
-    fun `Secret Key wasn't unwrapped with wrong Master PrivateKey`() {
+    fun `Secret Key wasn't unwrapped with a wrong Master PrivateKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -98,7 +100,7 @@ class CipherWrapperTest {
     }
 
     @Test
-    fun `Input ByteArray data was successfully encrypted with correct Secret Key`() {
+    fun `Input ByteArray data was successfully encrypted with a SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -117,7 +119,7 @@ class CipherWrapperTest {
     }
 
     @Test
-    fun `Input ByteArray data was successfully decrypted with correct Secret Key`() {
+    fun `Input ByteArray data was successfully decrypted with a correct SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -143,7 +145,7 @@ class CipherWrapperTest {
     }
 
     @Test(expected = GeneralSecurityException::class)
-    fun `Input ByteArray data wasn't decrypted with wrong Secret Key`() {
+    fun `Input ByteArray data wasn't decrypted with a wrong SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -167,7 +169,7 @@ class CipherWrapperTest {
     }
 
     @Test
-    fun `Input Stream was successfully encrypted with correct Secret Key`() {
+    fun `Input Stream was successfully encrypted with a SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -193,7 +195,7 @@ class CipherWrapperTest {
     }
 
     @Test
-    fun `Input Stream was successfully decrypted with correct Secret Key`() {
+    fun `Input Stream was successfully decrypted with a correct SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
@@ -229,7 +231,7 @@ class CipherWrapperTest {
     }
 
     @Test(expected = IOException::class)
-    fun `Input Stream wasn't decrypted with wrong Secret Key`() {
+    fun `Input Stream wasn't decrypted with a wrong SecretKey`() {
 
         // Given
         val secretKey = TestData.testSecretKey
