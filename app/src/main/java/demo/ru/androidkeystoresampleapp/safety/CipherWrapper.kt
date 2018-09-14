@@ -20,6 +20,9 @@ class CipherWrapper {
 
     companion object {
 
+        /**
+         * The length of an initialization vector (IV)
+         */
         private const val IV_LENGTH = 16
 
         /**
@@ -35,7 +38,7 @@ class CipherWrapper {
      * Wrapped Secret Key can be securely stored in the private Storage.
      */
     fun wrapSecretKey(keyToBeWrapped: SecretKey, keyToWrapWith: PublicKey): ByteArray {
-        val cipher: Cipher = Cipher.getInstance(RSA_TRANSFORMATION)
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.WRAP_MODE, keyToWrapWith)
 
         return cipher.wrap(keyToBeWrapped)
@@ -45,7 +48,7 @@ class CipherWrapper {
      * Unwrap (decrypt) Secret Key with a Master Private Key
      */
     fun unWrapSecretKey(keyToBeUnWrapped: ByteArray, keyToUnWrapWith: PrivateKey): SecretKey {
-        val cipher: Cipher = Cipher.getInstance(RSA_TRANSFORMATION)
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.UNWRAP_MODE, keyToUnWrapWith)
 
         return cipher.unwrap(keyToBeUnWrapped, Algorithm.AES, Cipher.SECRET_KEY) as SecretKey

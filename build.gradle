@@ -15,8 +15,10 @@ buildscript {
 
         // 3-rd party libraries versions
         libs = [
-                kotlin_version     : '1.2.61',
-                support_lib_version: '27.1.1',
+                kotlin_version      : '1.2.61',
+                support_lib_version : '27.1.1',
+                junit_version       : '4.12',
+                bouncycastle_version: '1.46'
         ]
 
         // Gradle plugins versions
