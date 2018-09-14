@@ -41,7 +41,7 @@ class KeysManager(private val context: Context) {
     }
 
     /**
-     * Generate and return an app Secret Key using a [passphrase] and a [salt]
+     * Generate a Secret Key using a [passphrase] and a [salt]
      */
     fun generateSecretKey(passphrase: String, salt: ByteArray): SecretKey {
         val iterations = 1000
@@ -55,7 +55,7 @@ class KeysManager(private val context: Context) {
     }
 
     /**
-     * Generate and save new Master KeyPair
+     * Generate and save to the AndroidKeyStore new Master KeyPair
      */
     fun generateMasterKeyPair(): KeyPair {
         val keyPairGenerator = KeyPairGenerator.getInstance(Algorithm.RSA, KEYSTORE_PROVIDER)
@@ -72,7 +72,7 @@ class KeysManager(private val context: Context) {
             .setKeySize(KEYSTORE_MASTER_KEY_SIZE)
 
             // Asymmetric RSA KeyPair must be signed with a certificate, so we have to
-            // set some attributes, required for the `fake` self-signed certificate.
+            // set some attributes, required for the "fake" self-signed certificate.
             .setSerialNumber(BigInteger.ONE)
             .setSubject(X500Principal("CN=$KEYSTORE_MASTER_KEY_ALIAS CA Certificate"))
             .setStartDate(startDate.time)

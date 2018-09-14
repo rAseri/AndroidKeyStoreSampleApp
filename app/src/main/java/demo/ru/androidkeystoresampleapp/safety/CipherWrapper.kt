@@ -14,23 +14,25 @@ import javax.crypto.spec.IvParameterSpec
 
 /**
  * This class responsible for performing all encryption/decryption operations
- * using a [Cipher] class.
+ * for the input data using a [Cipher] class.
  */
 class CipherWrapper {
 
     companion object {
+
         private const val IV_LENGTH = 16
 
         /**
          * The transformation represents the algorithm, that will be used for encryption or decryption,
          * in format of: ”Algorithm/Mode/Padding”
          */
-        const val AES_TRANSFORMATION = "AES/CBC/PKCS7Padding"
-        const val RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+        private const val AES_TRANSFORMATION = "AES/CBC/PKCS7Padding"
+        private const val RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
     }
 
     /**
-     * Wrap (encrypt) Secret Key with a Master Public Key
+     * Wrap (encrypt) Secret Key with a Master Public Key.
+     * Wrapped Secret Key can be securely stored in the private Storage.
      */
     fun wrapSecretKey(keyToBeWrapped: SecretKey, keyToWrapWith: PublicKey): ByteArray {
         val cipher: Cipher = Cipher.getInstance(RSA_TRANSFORMATION)
@@ -50,39 +52,41 @@ class CipherWrapper {
     }
 
     /**
-     * Encrypt data with a Secret Key and returns an encrypted data with an init vector.
+     * Encrypt data with a Secret Key and returns both the encrypted data
+     * and an initialization vector (IV) in the same ByteArray.
      *
-     * [data] - a ByteArray representation of plain data
-     * [secretKey] - a Secret Key for the encryption
+     * [data] - the ByteArray representation of plain data
+     * [secretKey] - the Secret Key for encryption
      */
     fun encrypt(data: ByteArray, secretKey: SecretKey): ByteArray {
 
-        val initVector = createInitVectorForEncryption()
+        val initVector = generateInitVectorForEncryption()
         val initVectorParameterSpec = IvParameterSpec(initVector)
 
-        // Get a cipher instance for the encryption
-        val cipher: Cipher = Cipher.getInstance(AES_TRANSFORMATION)
+        // Get a Cipher instance for encryption
+        val cipher = Cipher.getInstance(AES_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, initVectorParameterSpec)
 
-        // Encrypt data and concat it with init vector
+        // Encrypt data and concat it with the initialization vector
         val encryptedData = cipher.doFinal(data)
-        return initVector.plus(encryptedData)
+        return initVector + encryptedData
     }
 
     /**
-     * Decrypt data with a Secret Key and returns a decrypted data as a ByteArray
+     * Decrypt data with a Secret Key and initialization vector (IV)
+     * that is contained in the [data] ByteArray.
      *
-     * [data] - a ByteArray, that contains both init vector and encrypted data
-     * [secretKey] - a Secret Key for the decryption
+     * [data] - the ByteArray that contains both initialization vector and encrypted data
+     * [secretKey] - the Secret Key for decryption
      */
     fun decrypt(data: ByteArray, secretKey: SecretKey): ByteArray {
 
-        // Get an init vector from the beginning of the encrypted ByteArray
+        // Get an initialization vector from the beginning of the ByteArray
         val initVector = data.copyOfRange(0, IV_LENGTH)
         val initVectorParameterSpec = IvParameterSpec(initVector)
 
-        // Get a Cipher instance for decryption and init it with a Secret Key and an init vector
-        val cipher: Cipher = Cipher.getInstance(AES_TRANSFORMATION)
+        // Get a Cipher instance for decryption
+        val cipher = Cipher.getInstance(AES_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, initVectorParameterSpec)
 
         // Get an encrypted data and decrypt it
@@ -93,65 +97,67 @@ class CipherWrapper {
     /**
      * Encrypt and copy data from the [inputStream] to the [outputStream].
      *
-     * [inputStream] - an input stream that represents source "plain" data
-     * [outputStream] - an output stream in which encrypted data will be written
-     * [secretKey] - a Secret Key for the encryption
+     * [inputStream] - the input stream that represents source "plain" data
+     * [outputStream] - the output stream in which encrypted data will be written
+     * [secretKey] - the Secret Key for encryption
      */
-    fun encryptStream(
+    fun encryptInputStream(
         inputStream: InputStream,
         outputStream: OutputStream,
         secretKey: SecretKey
     ) {
 
-        val initVector = createInitVectorForEncryption()
+        val initVector = generateInitVectorForEncryption()
         val initVectorParameterSpec = IvParameterSpec(initVector)
 
-        // Get a cipher instance for the encryption
-        val cipher: Cipher = Cipher.getInstance(AES_TRANSFORMATION)
+        // Get a cipher instance for encryption
+        val cipher = Cipher.getInstance(AES_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, initVectorParameterSpec)
 
-        // Decorate an outputStream with a CipherOutputStream
+        // Decorate an outputStream with a CipherOutputStream for encryption
         val cipherOutputStream = CipherOutputStream(outputStream, cipher)
 
         try {
-            // Write init vector to the outputStream at first and then encrypt and copy main data
+            // Write initialization vector to the outputStream at first
+            // and then encrypt and copy main data
             outputStream.write(initVector)
             inputStream.copyTo(cipherOutputStream)
 
         } catch (e: IOException) {
-            throw IOException("Error while encrypt input stream $e", e)
+            throw IOException("Error while encrypt and copy data $e", e)
 
         } finally {
             inputStream.close()
-            outputStream.close()
+            cipherOutputStream.close()
         }
     }
 
     /**
      * Decrypt and copy data from the [inputStream] to the [outputStream].
      *
-     * [inputStream] - an input stream that represents encrypted data
-     * [outputStream] - an output stream in which decrypted data will be written
-     * [secretKey] - a Secret Key for the decryption
+     * [inputStream] - the input stream that represents encrypted data
+     * [outputStream] - the output stream in which decrypted data will be written
+     * [secretKey] - the Secret Key for decryption
      */
-    fun decryptStream(
+    fun decryptInputStream(
         inputStream: InputStream,
         outputStream: OutputStream,
         secretKey: SecretKey
     ) {
         val initVector = ByteArray(IV_LENGTH)
+        var cipherInputStream: CipherInputStream? = null
 
         try {
-            // Read the first bytes for the init vector
+            // Read the initialization vector from the first bytes of the inputStream
             inputStream.read(initVector)
             val initVectorParameterSpec = IvParameterSpec(initVector)
 
             // Get a Cipher instance for decryption
-            val cipher: Cipher = Cipher.getInstance(AES_TRANSFORMATION)
+            val cipher = Cipher.getInstance(AES_TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, secretKey, initVectorParameterSpec)
 
-            // Decorate an inputStream with a CipherInputStream
-            val cipherInputStream = CipherInputStream(inputStream, cipher)
+            // Decorate an inputStream with a CipherInputStream for decryption
+            cipherInputStream = CipherInputStream(inputStream, cipher)
 
             // Decrypt and copy data
             cipherInputStream.copyTo(outputStream)
@@ -160,15 +166,15 @@ class CipherWrapper {
             throw IOException("Error while decrypt input stream $e", e)
 
         } finally {
-            inputStream.close()
+            cipherInputStream?.close()
             outputStream.close()
         }
     }
 
     /**
-     * Create init vector that required for encryption with AES algorithm
+     * Generate initialization vector (IV) that required for encryption with AES algorithm
      */
-    private fun createInitVectorForEncryption(): ByteArray {
+    private fun generateInitVectorForEncryption(): ByteArray {
         val initVector = ByteArray(IV_LENGTH)
         SecureRandom().nextBytes(initVector)
         return initVector

@@ -115,7 +115,7 @@ class SecretManager(private val context: Context, private val storage: Storage) 
             inputStream = context.contentResolver.openInputStream(fileUri)
             outputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)
 
-            cipherWrapper.encryptStream(
+            cipherWrapper.encryptInputStream(
                 inputStream = inputStream,
                 outputStream = outputStream,
                 secretKey = getSecretKey()
@@ -137,7 +137,7 @@ class SecretManager(private val context: Context, private val storage: Storage) 
             inputStream = context.openFileInput(encryptedFileName)
             outputStream = context.openFileOutput(decryptedFileName, Context.MODE_PRIVATE)
 
-            cipherWrapper.decryptStream(
+            cipherWrapper.decryptInputStream(
                 inputStream = inputStream,
                 outputStream = outputStream,
                 secretKey = getSecretKey()

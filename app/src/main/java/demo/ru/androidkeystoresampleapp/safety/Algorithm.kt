@@ -1,7 +1,7 @@
 package demo.ru.androidkeystoresampleapp.safety
 
 /**
- * The names of using algorithms
+ * The names of encryption algorithms that is used in the app
  */
 object Algorithm {
     const val RSA = "RSA"
