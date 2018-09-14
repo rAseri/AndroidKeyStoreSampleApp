@@ -169,7 +169,7 @@ class CipherWrapper {
             throw IOException("Error while decrypt input stream $e", e)
 
         } finally {
-            cipherInputStream?.close()
+            cipherInputStream?.close() ?: inputStream.close()
             outputStream.close()
         }
     }

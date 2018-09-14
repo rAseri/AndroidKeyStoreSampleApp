@@ -26,16 +26,16 @@ class SecretManager(private val context: Context, private val storage: Storage) 
     }
 
     private val cipherWrapper = CipherWrapper()
-    private val keyStoreWrapper = KeysManager(context)
+    private val keysManager = KeysManager(context)
 
     init {
-        var masterKeyPair = keyStoreWrapper.getMasterKeyPair()
+        var masterKeyPair = keysManager.getMasterKeyPair()
 
         // NOTE: Master KeyPair may be null when a user is changing device protection mode
         if (masterKeyPair == null) {
 
             // Generate Master KeyPair
-            masterKeyPair = keyStoreWrapper.generateMasterKeyPair()
+            masterKeyPair = keysManager.generateMasterKeyPair()
 
             // Generate Secret Key, wrap (encrypt) it with the Master PublicKey
             // and save it to the local Storage
@@ -52,7 +52,7 @@ class SecretManager(private val context: Context, private val storage: Storage) 
     private fun generateAndSaveSecretKey(masterPublicKey: PublicKey) {
 
         // Generate a Secret Key
-        val secretKey = keyStoreWrapper.generateSecretKey(
+        val secretKey = keysManager.generateSecretKey(
             passphrase = TEST_USER_PASSPHRASE,
             salt = TEST_SALT
         )
@@ -165,7 +165,7 @@ class SecretManager(private val context: Context, private val storage: Storage) 
     private fun getSecretKey(): SecretKey {
 
         // Get Master KeyPair
-        val masterKey = keyStoreWrapper.getMasterKeyPair()
+        val masterKey = keysManager.getMasterKeyPair()
                 ?: throw IllegalStateException("There is no master key in the AndroidKeyStore")
 
         // Get wrapped (encrypted) Secret Key from the local Storage
@@ -180,7 +180,7 @@ class SecretManager(private val context: Context, private val storage: Storage) 
     }
 
     fun removeKeysMaterials() {
-        keyStoreWrapper.deleteMasterKeyPair()
+        keysManager.deleteMasterKeyPair()
         storage.deleteSecretKey()
     }
 }

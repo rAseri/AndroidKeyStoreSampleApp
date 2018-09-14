@@ -34,7 +34,7 @@ class KeysManager(private val context: Context) {
         private const val SECRET_KEY_SIZE = 256
     }
 
-    private val keyStore: KeyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
+    private val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
 
     init {
         keyStore.load(null)
